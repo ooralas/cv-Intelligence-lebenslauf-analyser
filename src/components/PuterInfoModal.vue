@@ -58,7 +58,7 @@ const emit = defineEmits(['close', 'proceed'])
 </template>
 
 <style scoped>
-/* Gleiches Design System wie DisclaimerModal für Konsistenz */
+/* Same design system as DisclaimerModal for consistency */
 .modal-overlay {
   position: fixed;
   top: 0;

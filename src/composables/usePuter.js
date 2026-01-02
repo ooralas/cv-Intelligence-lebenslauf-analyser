@@ -2,11 +2,30 @@ import puter from '@heyputer/puter.js'
 import { ANALYSIS_SYSTEM_PROMPT, ANALYSIS_USER_PROMPT_FILE } from '../config/prompts'
 
 /**
- * Composable for AI-based resume analysis
- * Focus: Critical Review (Strengths, Weaknesses, Improvements)
+ * Unified Composable for all Puter.js interactions (AI & File System)
  */
-export function useResumeAnalyzer() {
+export function usePuter() {
 
+    // --- File System Operations ---
+    const uploadFile = async (file) => {
+        try {
+            const uploadedFile = await puter.fs.write(file.name, file)
+            return uploadedFile
+        } catch (error) {
+            console.error('File write failed:', error)
+            throw new Error('Fehler beim Speichern der Datei')
+        }
+    }
+
+    const deleteFile = async (path) => {
+        try {
+            await puter.fs.delete(path)
+        } catch (error) {
+            console.warn('File deletion failed (non-critical):', error)
+        }
+    }
+
+    // --- AI / Chat Operations ---
     const analyzeWithFile = async (uploadedFilePath) => {
         const response = await puter.ai.chat(
             [
@@ -30,20 +49,14 @@ export function useResumeAnalyzer() {
             ],
             { model: import.meta.env.VITE_AI_MODEL || 'gpt-4o' }
         )
-
         return response
     }
 
     const parseResponse = (response) => {
-
-
         // 1. Detection of Usage Limits (Specific Paths & Text Search)
         try {
-            // Path 1: Deep Puter Structure (as seen in logs)
             const textDeep = response?.result?.message?.content?.[0]?.text;
-            // Path 2: Standard structure
             const textStandard = response?.message?.content?.[0]?.text;
-            // Path 3: Stringify fallback
             const stringified = typeof response === 'object' ? JSON.stringify(response) : String(response);
 
             const checks = [textDeep, textStandard, stringified].filter(Boolean).join(' ').toLowerCase();
@@ -54,7 +67,6 @@ export function useResumeAnalyzer() {
                 throw new Error('Das tägliche KI-Limit ist vorübergehend erreicht. Bitte warten Sie einen Moment oder versuchen Sie es später erneut.');
             }
         } catch (e) {
-            // Rethrow specific limit error
             if (e.message.includes('Limit')) throw e;
         }
 
@@ -70,7 +82,6 @@ export function useResumeAnalyzer() {
         } else if (response?.message && typeof response.message === 'string') {
             content = response.message;
         } else {
-            // Last resort: Stringify
             content = JSON.stringify(response);
         }
 
@@ -82,7 +93,7 @@ export function useResumeAnalyzer() {
             content = parts.length > 1 ? parts[1].trim() : parts[0].trim();
         }
 
-        // 4. Force JSON Isolation (Start from first { to last })
+        // 4. Force JSON Isolation
         const firstBrace = content.indexOf('{');
         const lastBrace = content.lastIndexOf('}');
         if (firstBrace !== -1 && lastBrace !== -1) {
@@ -99,6 +110,8 @@ export function useResumeAnalyzer() {
     }
 
     return {
+        uploadFile,
+        deleteFile,
         analyzeWithFile,
         parseResponse
     }

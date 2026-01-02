@@ -45,9 +45,9 @@ export const normalizeResumeData = (rawData) => {
         improvements: cleanList(rawData.improvements || rawData.suggestions || [])
     };
 
-    // Fallback logic removed per user request - strictly rely on AI output.
+    // Rely strictly on AI output for consistent results.
 
-    // Normalize Profile Name - STRICTLY from AI data only
+    // Normalize Profile Name - derived from AI output structure
     if (!data.profile.name || data.profile.name === "Unbekannter Kandidat") {
         if (rawData.name) data.profile.name = rawData.name;
         else if (rawData.contact?.name) data.profile.name = rawData.contact.name;

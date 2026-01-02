@@ -29,8 +29,8 @@ const onDrop = (event) => {
     <div class="upload-block">
         <h2 style="border:none; margin-top: 0; font-weight: 600; font-size: 20px;">Datei hochladen</h2>
         
-        <!-- Drop Zone (Hidden/Disabled when analyzing to show loading state clearly, or just visually disabled?) -->
-        <!-- User request: "in dem Drag&Drop Box den Name der Datei angezeigt wird" -->
+        <!-- Drop Zone (Loading state is shown here when analyzing) -->
+        <!-- Logic to display filename in the drag & drop box -->
         
         <div 
             class="drop-zone"
@@ -50,7 +50,7 @@ const onDrop = (event) => {
             </template>
             
             <template v-else>
-                <!-- Loading Content INSIDE the box as requested -->
+                <!-- Loading state indicator -->
                 <div class="spinner"></div>
                 <div class="text">
                     Analysiere <strong>{{ store.resumeFile?.name }}</strong>...
@@ -112,7 +112,7 @@ const onDrop = (event) => {
     border-color: var(--border-subtle);
 }
 
-/* ... existing icon animation only when not disabled ... */
+/* Icon animation only when enabled */
 .drop-zone:hover:not(.disabled) .icon {
     transform: scale(1.1) translateY(-5px);
 }

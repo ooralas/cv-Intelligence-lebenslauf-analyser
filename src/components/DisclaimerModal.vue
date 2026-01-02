@@ -19,7 +19,7 @@ const handleAccept = () => {
   <Transition name="modal">
     <div v-if="show" class="modal-overlay">
       <div class="modal-content">
-        <!-- Icon oben (Subtil und modern) -->
+        <!-- Hero Icon (Subtle and modern) -->
         <div class="hero-icon">
           ⚖️
         </div>
@@ -70,8 +70,8 @@ const handleAccept = () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(255, 255, 255, 0.8); /* Helles Overlay statt dunkel */
-  backdrop-filter: blur(12px); /* Starker Blur für den Glas-Effekt */
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;

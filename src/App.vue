@@ -64,5 +64,5 @@ const handleModalClose = () => {
 </template>
 
 <style>
-/* No scoped styles needed, using global Notion styles from style.css */
+/* No scoped styles needed, global Notion styles from style.css are used */
 </style>

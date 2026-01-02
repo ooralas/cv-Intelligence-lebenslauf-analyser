@@ -177,7 +177,7 @@ p {
 .animate-fade-in {
   animation: fadeInUp 0.6s ease-out forwards;
   opacity: 0;
-  /* Starte unsichtbar */
+  /* Start transparent */
 }
 
 /* Stagger delay helpers if needed, but Vue can handle this better via :style */

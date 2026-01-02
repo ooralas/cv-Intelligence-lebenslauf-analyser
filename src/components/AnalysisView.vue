@@ -96,7 +96,7 @@ watch(result, () => {
             </div>
         </div>
 
-        <hr class="notion-divider" style="margin: 40px 0;" />
+       
 
         <!-- Improvements Full Width -->
         <div class="section animate-fade-in" style="animation-delay: 0.4s;">
@@ -133,7 +133,7 @@ watch(result, () => {
 </template>
 
 <style scoped>
-/* Top Properties */
+
 .properties {
     font-size: 14px;
     margin-bottom: 32px;
@@ -164,7 +164,6 @@ watch(result, () => {
     color: var(--text-primary);
 }
 
-/* Grid Layout */
 .grid-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -179,7 +178,6 @@ watch(result, () => {
     }
 }
 
-/* Typography */
 .section-title {
     font-size: 18px;
     font-weight: 600;
@@ -197,7 +195,7 @@ watch(result, () => {
 .red-text { color: #d44c47; }
 .blue-text { color: #0b6e99; }
 
-/* Styled Lists */
+
 .styled-list {
     display: flex;
     flex-direction: column;
@@ -228,7 +226,6 @@ watch(result, () => {
 .bullet.green { background: #dbeddb; color: #2d7d55; }
 .bullet.red { background: #ffe2dd; color: #d44c47; }
 
-/* Improvements */
 .improvements-grid {
     display: grid;
     grid-template-columns: 1fr;
@@ -274,14 +271,6 @@ watch(result, () => {
     transition: all 0.2s;
 }
 
-/* Notion divider */
-.notion-divider {
-    border: none;
-    border-top: 1px solid var(--border-subtle);
-    margin: 24px 0;
-}
-
-/* Score Tags */
 .score-tag {
     padding: 4px 8px;
     border-radius: 4px;
@@ -292,7 +281,7 @@ watch(result, () => {
 .score-tag.yellow { background: #fdecc8; color: #d9730d; }
 .score-tag.red { background: #ffe2dd; color: #d44c47; }
 
-/* Callout */
+
 .notion-callout {
   display: flex;
   gap: 12px;

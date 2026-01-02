@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { useResumeAnalyzer } from '../composables/useResumeAnalyzer'
-import { usePuterFileSystem } from '../composables/usePuterFileSystem'
+import { usePuter } from '../composables/usePuter'
 import { normalizeResumeData, isValidAnalysis } from '../utils/dataHelpers'
 
 export const useResumeStore = defineStore('resume', {
@@ -35,14 +34,12 @@ export const useResumeStore = defineStore('resume', {
             this.error = null
             this.analysisResult = null
 
-            const analyzer = useResumeAnalyzer()
-            const puterFs = usePuterFileSystem()
-
+            const puter = usePuter()
             let uploadedFile = null
 
             try {
-                // Upload file (PDF or image) for unified LLM analysis
-                uploadedFile = await puterFs.uploadFile(this.resumeFile)
+                // Upload file (PDF or image)
+                uploadedFile = await puter.uploadFile(this.resumeFile)
 
                 const uploadedPath = uploadedFile?.path
                 const uploadedName = uploadedFile?.name
@@ -53,11 +50,11 @@ export const useResumeStore = defineStore('resume', {
 
                 let response
                 try {
-                    response = await analyzer.analyzeWithFile(uploadedPath)
+                    response = await puter.analyzeWithFile(uploadedPath)
                 } finally {
-                    // Best-effort cleanup; do not fail analysis because cleanup failed
+                    // Best-effort cleanup
                     try {
-                        await puterFs.deleteFile(uploadedName)
+                        await puter.deleteFile(uploadedName)
                     } catch (cleanupErr) {
                         console.warn('Cleanup failed (deleteFile):', cleanupErr)
                     }
@@ -68,7 +65,7 @@ export const useResumeStore = defineStore('resume', {
 
                 let rawData
                 try {
-                    rawData = analyzer.parseResponse(response)
+                    rawData = puter.parseResponse(response)
                 } catch (parseErr) {
                     console.error('Failed to parse analyzer response:', parseErr, response)
                     throw new Error('Die Analyse lieferte ein unerwartetes Format.')
@@ -92,7 +89,7 @@ export const useResumeStore = defineStore('resume', {
 
                 this.analysisResult = normalizedData
             } catch (err) {
-                // Ignore errors from stale runs (user selected a new file / started another run)
+                // Ignore errors from stale runs
                 if (runId !== this._analysisRunId) return
 
                 console.error('Analysis failed:', err)
