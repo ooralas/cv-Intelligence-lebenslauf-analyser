@@ -54,7 +54,7 @@ watch(result, () => {
             </div>
         </div>
 
-        <hr class="notion-divider" />
+    
 
         <!-- Executive Summary Callout -->
         <div class="notion-callout animate-fade-in" style="animation-delay: 0.1s;">

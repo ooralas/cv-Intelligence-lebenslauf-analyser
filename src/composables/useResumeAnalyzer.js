@@ -7,7 +7,6 @@ import { ANALYSIS_SYSTEM_PROMPT, ANALYSIS_USER_PROMPT_FILE } from '../config/pro
  */
 export function useResumeAnalyzer() {
 
-    // Unified function for PDF and Images (File-based analysis)
     const analyzeWithFile = async (uploadedFilePath) => {
         const response = await puter.ai.chat(
             [
@@ -29,15 +28,14 @@ export function useResumeAnalyzer() {
                     ]
                 }
             ],
-            { model: 'gpt-4o' }
+            { model: import.meta.env.VITE_AI_MODEL || 'gpt-4o' }
         )
 
         return response
     }
 
     const parseResponse = (response) => {
-        // Debug Log
-        console.log("Raw AI Response:", response);
+
 
         // 1. Detection of Usage Limits (Specific Paths & Text Search)
         try {

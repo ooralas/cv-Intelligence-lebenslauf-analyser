@@ -9,16 +9,27 @@ export const useResumeStore = defineStore('resume', {
         analysisResult: null,
         isAnalyzing: false,
         error: null,
+
+        // Internal: used to prevent stale responses overriding newer ones
+        _analysisRunId: 0,
     }),
+
     actions: {
         setResumeFile(file) {
             this.resumeFile = file
             this.error = null
             this.analysisResult = null
+
+            // Invalidate any in-flight analysis result
+            this._analysisRunId += 1
         },
 
         async analyzeResume() {
+            // Avoid parallel runs
+            if (this.isAnalyzing) return
             if (!this.resumeFile) return
+
+            const runId = ++this._analysisRunId
 
             this.isAnalyzing = true
             this.error = null
@@ -27,43 +38,86 @@ export const useResumeStore = defineStore('resume', {
             const analyzer = useResumeAnalyzer()
             const puterFs = usePuterFileSystem()
 
+            let uploadedFile = null
+
             try {
-                // Unified Flow: Upload ANY file (PDF or Image) and let AI analyze it directly
-                // This allows the AI (GPT-4o) to see the full layout and structure of the PDF
-                const uploadedFile = await puterFs.uploadFile(this.resumeFile)
+                // Upload file (PDF or image) for unified LLM analysis
+                uploadedFile = await puterFs.uploadFile(this.resumeFile)
+
+                const uploadedPath = uploadedFile?.path
+                const uploadedName = uploadedFile?.name
+
+                if (!uploadedPath || !uploadedName) {
+                    throw new Error('Upload failed: missing uploaded file reference.')
+                }
+
                 let response
-
                 try {
-                    // Use new unified file analysis function
-                    response = await analyzer.analyzeWithFile(uploadedFile.path)
+                    response = await analyzer.analyzeWithFile(uploadedPath)
                 } finally {
-                    // Cleanup: Delete temporary file always, even if analysis fails
-                    await puterFs.deleteFile(uploadedFile.name)
+                    // Best-effort cleanup; do not fail analysis because cleanup failed
+                    try {
+                        await puterFs.deleteFile(uploadedName)
+                    } catch (cleanupErr) {
+                        console.warn('Cleanup failed (deleteFile):', cleanupErr)
+                    }
                 }
 
-                const rawData = analyzer.parseResponse(response)
-                const normalizedData = normalizeResumeData(rawData)
+                // If user changed file or started a new run meanwhile, ignore this result
+                if (runId !== this._analysisRunId) return
 
-                // Validation
+                let rawData
+                try {
+                    rawData = analyzer.parseResponse(response)
+                } catch (parseErr) {
+                    console.error('Failed to parse analyzer response:', parseErr, response)
+                    throw new Error('Die Analyse lieferte ein unerwartetes Format.')
+                }
+
+                let normalizedData
+                try {
+                    normalizedData = normalizeResumeData(rawData)
+                } catch (normalizeErr) {
+                    console.error('Failed to normalize resume data:', normalizeErr, rawData)
+                    throw new Error('Die Analyse lieferte keine verwertbaren Ergebnisse.')
+                }
+
                 if (!isValidAnalysis(normalizedData)) {
-                    console.error("Invalid AI Response Structure:", rawData);
-                    throw new Error('Die Analyse lieferte keine verwertbaren Ergebnisse.');
+                    console.error('Invalid AI response structure:', rawData)
+                    throw new Error('Die Analyse lieferte keine verwertbaren Ergebnisse.')
                 }
+
+                // Final stale-check before committing state
+                if (runId !== this._analysisRunId) return
 
                 this.analysisResult = normalizedData
             } catch (err) {
+                // Ignore errors from stale runs (user selected a new file / started another run)
+                if (runId !== this._analysisRunId) return
+
                 console.error('Analysis failed:', err)
-                this.error = err.message || 'Fehler: Die KI konnte diesen Lebenslauf nicht lesen. Bitte lade eine besser lesbare Datei hoch.'
+
+                const message =
+                    (err && typeof err === 'object' && 'message' in err && err.message) ||
+                    'Fehler: Die KI konnte diesen Lebenslauf nicht lesen. Bitte lade eine besser lesbare Datei hoch.'
+
+                this.error = message
             } finally {
-                this.isAnalyzing = false
+                // Only end "isAnalyzing" if this is still the latest run
+                if (runId === this._analysisRunId) {
+                    this.isAnalyzing = false
+                }
             }
         },
 
         reset() {
-            this.resumeFile = null;
-            this.analysisResult = null;
-            this.isAnalyzing = false;
-            this.error = null;
-        }
+            this.resumeFile = null
+            this.analysisResult = null
+            this.isAnalyzing = false
+            this.error = null
+
+            // Invalidate any in-flight run
+            this._analysisRunId += 1
+        },
     },
 })

@@ -36,4 +36,3 @@ Dieses Projekt ist eine moderne Web-Anwendung zur Analyse von Lebensläufen. Es 
 Die App ermöglicht es dem Nutzer, den Text seines Lebenslaufs einzufügen. Dieser Text wird an das AI-Modell von Puter gesendet, welches die Informationen extrahiert und als strukturiertes JSON zurückgibt. Die Anwendung visualisiert diese Daten dann in einem übersichtlichen, professionellen Dashboard.
 
 ---
-Entwickelt von Salar (Senior Software Engineer)

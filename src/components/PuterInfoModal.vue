@@ -80,8 +80,9 @@ const emit = defineEmits(['close', 'proceed'])
   padding: 40px 32px;
   border-radius: 24px;
   box-shadow: 
-    0 20px 40px -10px rgba(0,0,0,0.08), 
-    0 0 1px rgba(0,0,0,0.1);
+    0 30px 60px -12px rgba(0, 0, 0, 0.15), 
+    0 18px 36px -18px rgba(0, 0, 0, 0.2),
+    0 0 1px rgba(0, 0, 0, 0.1); /* Layered shadows for more depth */
   text-align: center;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }

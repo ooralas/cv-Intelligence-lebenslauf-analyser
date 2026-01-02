@@ -6,11 +6,11 @@ import puter from '@heyputer/puter.js'
 export function usePuterFileSystem() {
     const uploadFile = async (file) => {
         try {
-            const uploadedFile = await puter.fs.upload(file)
+            const uploadedFile = await puter.fs.write(file.name, file)
             return uploadedFile
         } catch (error) {
-            console.error('File upload failed:', error)
-            throw new Error('Fehler beim Hochladen der Datei')
+            console.error('File write failed:', error)
+            throw new Error('Fehler beim Speichern der Datei')
         }
     }
 
