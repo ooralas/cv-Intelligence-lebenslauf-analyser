@@ -47,7 +47,7 @@ export const useResumeStore = defineStore('resume', {
                 // Validation
                 if (!isValidAnalysis(normalizedData)) {
                     console.error("Invalid AI Response Structure:", rawData);
-                    throw new Error('Die Analyste lieferte keine verwertbaren Ergebnisse.');
+                    throw new Error('Die Analyse lieferte keine verwertbaren Ergebnisse.');
                 }
 
                 this.analysisResult = normalizedData

@@ -1,309 +1,306 @@
 <script setup>
 import { useResumeStore } from '../stores/resumeStore'
-import { useScoreFormatter } from '../composables/useScoreFormatter'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const store = useResumeStore()
-const { getScoreColor } = useScoreFormatter()
 const result = computed(() => store.analysisResult)
-const profile = computed(() => result.value?.profile || {})
+
+// Simple score color logic
+const scoreColorClass = computed(() => {
+    const s = result.value?.score || 0
+    if (s >= 90) return 'green'
+    if (s >= 75) return 'blue'
+    if (s >= 60) return 'yellow'
+    return 'red'
+})
+
+// Checkbox Logic for Improvements
+const checkedImprovements = ref(new Set())
+
+const toggleImprovement = (index) => {
+    if (checkedImprovements.value.has(index)) {
+        checkedImprovements.value.delete(index)
+    } else {
+        checkedImprovements.value.add(index)
+    }
+}
+
+// Reset checkboxes when result changes
+watch(result, () => {
+    checkedImprovements.value.clear()
+})
 </script>
 
 <template>
-  <div class="analysis-container glass">
-    <!-- Header Section -->
-    <div class="header-section">
-      <div class="profile-main">
-        <div class="avatar" :style="{ borderColor: getScoreColor(result?.score) }">
-          {{ profile.name?.charAt(0) || '?' }}
+    <div v-if="result" class="analysis-content">
+        
+        <!-- Notion Properties Section (Metadata) -->
+        <div class="properties">
+            <div class="property-item">
+                <div class="prop-label">Name</div>
+                <div class="prop-value">{{ result.profile.name }}</div>
+            </div>
+            <div class="property-item">
+                <div class="prop-label">Headline</div>
+                <div class="prop-value">{{ result.profile.headline || 'Nicht angegeben' }}</div>
+            </div>
+            <div class="property-item">
+                <div class="prop-label">Score</div>
+                <div class="prop-value">
+                    <span class="score-tag" :class="scoreColorClass">
+                        {{ result.score }}/100
+                    </span>
+                </div>
+            </div>
         </div>
-        <div class="info">
-          <h2>{{ profile.name || 'Unbekannter Kandidat' }}</h2>
-          <p class="headline">{{ profile.headline }}</p>
-          <p class="location" v-if="profile.location">📍 {{ profile.location }}</p>
+
+        <hr class="notion-divider" />
+
+        <!-- Executive Summary Callout -->
+        <div class="notion-callout animate-fade-in" style="animation-delay: 0.1s;">
+            <span class="icon">💡</span>
+            <div>
+                <b style="font-size: 1.1em;">Executive Summary</b>
+                <div style="margin-top: 4px; color: var(--text-primary); line-height: 1.6;">
+                    {{ result.executive_summary }}
+                </div>
+            </div>
         </div>
-      </div>
-      
-      <div class="score-card">
-        <div class="score-ring" :style="{ borderColor: getScoreColor(result?.score) }">
-          <span class="score-number">{{ result?.score || 0 }}</span>
+        
+        <!-- Grid Layout for Strengths & Weaknesses -->
+        <div class="grid-row">
+            <!-- Strengths Column -->
+            <div class="column animate-fade-in" style="animation-delay: 0.2s;">
+                <h2 class="section-title green-text">
+                    <span class="icon-small">💪</span> Stärken
+                </h2>
+                <div class="styled-list">
+                    <div v-for="(item, index) in result.strengths" :key="index" class="list-item">
+                        <span class="bullet green">✓</span>
+                        <span class="content">{{ item }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weaknesses Column -->
+            <div class="column animate-fade-in" style="animation-delay: 0.3s;">
+                <h2 class="section-title red-text">
+                    <span class="icon-small">🚩</span> Schwächen
+                </h2>
+                <div class="styled-list">
+                    <div v-for="(item, index) in result.weaknesses" :key="index" class="list-item">
+                        <span class="bullet red">!</span>
+                        <span class="content">{{ item }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <span class="score-label">Gesamtbewertung</span>
-      </div>
+
+        <hr class="notion-divider" style="margin: 40px 0;" />
+
+        <!-- Improvements Full Width -->
+        <div class="section animate-fade-in" style="animation-delay: 0.4s;">
+            <h2 class="section-title blue-text">
+                <span class="icon-small">🚀</span> Potenzial
+            </h2>
+            <div class="improvements-grid">
+                <div 
+                    v-for="(item, index) in result.improvements" 
+                    :key="index" 
+                    class="improvement-card"
+                    :class="{ completed: checkedImprovements.has(index) }"
+                    @click="toggleImprovement(index)"
+                >
+                    <input 
+                        type="checkbox" 
+                        class="modern-checkbox" 
+                        :checked="checkedImprovements.has(index)"
+                        readonly 
+                    />
+                    <span class="improvement-text">{{ item }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button at bottom -->
+        <div style="margin-top: 5rem; text-align: center;">
+            <button @click="store.reset()" class="notion-btn">
+                ← Neue Analyse starten
+            </button>
+        </div>
+
     </div>
-
-    <!-- Executive Summary -->
-    <div class="summary-section">
-      <h3>🔍 Executive Summary</h3>
-      <p>{{ result?.executive_summary }}</p>
-    </div>
-
-    <!-- Grid Layout for Analysis -->
-    <div class="analysis-grid">
-      <!-- Strengths -->
-      <div class="card card-green">
-        <div class="card-header">
-          <span class="card-icon">💪</span>
-          <h4>Stärken</h4>
-        </div>
-        <ul>
-          <li v-for="(item, index) in result?.strengths" :key="index">
-            {{ item }}
-          </li>
-        </ul>
-      </div>
-
-      <!-- Weaknesses -->
-      <div class="card card-red">
-        <div class="card-header">
-          <span class="card-icon">🚩</span>
-          <h4>Schwachstellen</h4>
-        </div>
-        <ul>
-          <li v-for="(item, index) in result?.weaknesses" :key="index">
-            {{ item }}
-          </li>
-        </ul>
-      </div>
-
-      <!-- Improvements -->
-      <div class="card card-blue">
-        <div class="card-header">
-          <span class="card-icon">🚀</span>
-          <h4>Verbesserungspotenzial</h4>
-        </div>
-        <ul>
-          <li v-for="(item, index) in result?.improvements" :key="index">
-            {{ item }}
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="action-footer">
-      <button @click="store.reset" class="secondary">Neue Analyse</button>
-    </div>
-  </div>
 </template>
 
 <style scoped>
-.analysis-container {
-  padding: 3rem;
-  max-width: 1000px;
-  margin: 0 auto;
-  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+/* Top Properties */
+.properties {
+    font-size: 14px;
+    margin-bottom: 32px;
+    color: var(--text-primary);
+    display: flex;
+    gap: 48px; 
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-subtle);
 }
 
-/* Header Styling */
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.property-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
-.profile-main {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+.prop-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary);
+    font-weight: 600;
 }
 
-.avatar {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.5rem;
-  font-weight: 700;
-  border: 3px solid #60a5fa;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-}
-
-.info h2 {
-  margin: 0;
-  font-size: 2rem;
-  background: linear-gradient(to right, #fff, #cbd5e1);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.headline {
-  color: #60a5fa;
-  font-size: 1.1rem;
-  margin: 0.3rem 0;
-}
-
-.location {
-  color: #94a3b8;
-  font-size: 0.9rem;
-  margin: 0;
-}
-
-/* Score Styling */
-.score-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.score-ring {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 6px solid #4ade80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.5rem;
-  background: rgba(0,0,0,0.2);
-}
-
-.score-number {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #fff;
-}
-
-.score-label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #94a3b8;
-}
-
-/* Summary Section */
-.summary-section {
-  margin-bottom: 3rem;
-  background: rgba(255,255,255,0.03);
-  padding: 1.5rem;
-  border-radius: 12px;
-  border-left: 4px solid #facc15;
-}
-
-.summary-section h3 {
-  margin-top: 0;
-  margin-bottom: 0.5rem;
-  color: #facc15;
-}
-
-.summary-section p {
-  color: #e2e8f0;
-  line-height: 1.7;
-  font-size: 1.05rem;
-  margin: 0;
+.prop-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 /* Grid Layout */
-.analysis-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-bottom: 3rem;
-}
-
-.card {
-  padding: 1.5rem;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: transform 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-5px);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  margin-bottom: 1.2rem;
-  padding-bottom: 0.8rem;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.card-icon {
-  font-size: 1.5rem;
-}
-
-.card h4 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.card ul {
-  margin: 0;
-  padding-left: 0;
-  list-style: none;
-}
-
-.card li {
-  margin-bottom: 0.8rem;
-  padding-left: 1.2rem;
-  position: relative;
-  color: #cbd5e1;
-  font-size: 0.95rem;
-}
-
-.card li::before {
-  content: "•";
-  position: absolute;
-  left: 0;
-  font-weight: bold;
-}
-
-/* Card Variants */
-.card-green {
-  border-top: 4px solid #4ade80;
-}
-.card-green h4 { color: #4ade80; }
-.card-green li::before { color: #4ade80; }
-
-.card-red {
-  border-top: 4px solid #f87171;
-}
-.card-red h4 { color: #f87171; }
-.card-red li::before { color: #f87171; }
-
-.card-blue {
-  border-top: 4px solid #60a5fa;
-}
-.card-blue h4 { color: #60a5fa; }
-.card-blue li::before { color: #60a5fa; }
-
-.action-footer {
-  text-align: center;
-  margin-top: 2rem;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(40px); }
-  to { opacity: 1; transform: translateY(0); }
+.grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 32px;
 }
 
 @media (max-width: 768px) {
-  .header-section {
+    .grid-row {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+}
+
+/* Typography */
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.icon-small { font-size: 18px; }
+
+.green-text { color: #2d7d55; }
+.red-text { color: #d44c47; }
+.blue-text { color: #0b6e99; }
+
+/* Styled Lists */
+.styled-list {
+    display: flex;
     flex-direction: column;
-    text-align: center;
-    gap: 2rem;
-  }
-  
-  .profile-main {
-    flex-direction: column;
-  }
-  
-  .analysis-grid {
+    gap: 12px;
+}
+
+.list-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    line-height: 1.6;
+    font-size: 15px;
+}
+
+.bullet {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.bullet.green { background: #dbeddb; color: #2d7d55; }
+.bullet.red { background: #ffe2dd; color: #d44c47; }
+
+/* Improvements */
+.improvements-grid {
+    display: grid;
     grid-template-columns: 1fr;
-  }
-  
-  .analysis-container {
-    padding: 1.5rem;
-  }
+    gap: 16px;
+}
+
+.improvement-card {
+    background: #f7f9fb; 
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.improvement-card:hover {
+    background: #edf3f8;
+    border-color: rgba(35, 131, 226, 0.2);
+}
+
+.improvement-card.completed {
+    background: #f0f0f0;
+    opacity: 0.6;
+}
+
+.improvement-card.completed .improvement-text {
+    text-decoration: line-through;
+    color: var(--text-tertiary);
+}
+
+.modern-checkbox {
+    margin-top: 4px;
+    accent-color: #2383E2;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.improvement-text {
+    transition: all 0.2s;
+}
+
+/* Notion divider */
+.notion-divider {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 24px 0;
+}
+
+/* Score Tags */
+.score-tag {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+.score-tag.green { background: #dbeddb; color: #2d7d55; }
+.score-tag.blue { background: #d3e5ef; color: #0b6e99; }
+.score-tag.yellow { background: #fdecc8; color: #d9730d; }
+.score-tag.red { background: #ffe2dd; color: #d44c47; }
+
+/* Callout */
+.notion-callout {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  margin: 12px 0;
+  border: 1px solid transparent;
 }
 </style>

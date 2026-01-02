@@ -1,259 +1,175 @@
 <script setup>
-import { ref } from 'vue'
 import { useResumeStore } from '../stores/resumeStore'
+import { ref } from 'vue'
 
 const store = useResumeStore()
+const isDragging = ref(false)
 const emit = defineEmits(['startAnalysis'])
 
-const fileInput = ref(null)
-const fileName = ref('')
-const isDragging = ref(false)
-
-const onFileChange = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    handleFile(file)
-  }
+const handleFileUpload = (event) => {
+    if (store.isAnalyzing) return // Block interaction
+    const file = event.target.files[0]
+    if (file) processFile(file)
 }
 
-const handleFile = (file) => {
-  // Validate file type
-  const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
-  if (!validTypes.includes(file.type)) {
-    alert('Bitte lade nur PDF oder Bild-Dateien (JPG, PNG) hoch.')
-    return
-  }
-  
-  fileName.value = file.name
-  store.setResumeFile(file)
+const processFile = (file) => {
+    store.setResumeFile(file)
+    emit('startAnalysis')
 }
 
-const onDrop = (e) => {
-  e.preventDefault()
-  isDragging.value = false
-  
-  const files = e.dataTransfer.files
-  if (files.length > 0) {
-    handleFile(files[0])
-  }
-}
-
-const onDragOver = (e) => {
-  e.preventDefault()
-  isDragging.value = true
-}
-
-const onDragLeave = () => {
-  isDragging.value = false
-}
-
-const handleAnalyze = () => {
-  if (!store.resumeFile) return
-  emit('startAnalysis')
-}
-
-const clear = () => {
-    store.reset()
-    fileName.value = ''
-    if (fileInput.value) fileInput.value.value = ''
+const onDrop = (event) => {
+    if (store.isAnalyzing) return // Block interaction
+    isDragging.value = false
+    const file = event.dataTransfer.files[0]
+    if (file) processFile(file)
 }
 </script>
 
 <template>
-  <div class="upload-container glass">
-    <h3>Lebenslauf hochladen</h3>
-    <p class="subtitle">PDF oder Bild (JPG, PNG)</p>
-    
-    <div 
-      class="drop-zone" 
-      :class="{ 'dragging': isDragging }"
-      @click="fileInput.click()"
-      @drop="onDrop"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-    >
-        <div v-if="!fileName" class="prompt">
-            <span class="icon">📄</span>
-            <p class="main-text">Klicke hier oder ziehe eine Datei hierher</p>
-            <p class="sub-text">PDF, JPG oder PNG (max. 10MB)</p>
+    <div class="upload-block">
+        <h2 style="border:none; margin-top: 0; font-weight: 600; font-size: 20px;">Datei hochladen</h2>
+        
+        <!-- Drop Zone (Hidden/Disabled when analyzing to show loading state clearly, or just visually disabled?) -->
+        <!-- User request: "in dem Drag&Drop Box den Name der Datei angezeigt wird" -->
+        
+        <div 
+            class="drop-zone"
+            :class="{ active: isDragging, disabled: store.isAnalyzing }"
+            @dragover.prevent="!store.isAnalyzing && (isDragging = true)"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="onDrop"
+            @click="!store.isAnalyzing && $refs.fileInput.click()"
+        >
+            <template v-if="!store.isAnalyzing">
+                <div class="icon">📄</div>
+                <div class="text">
+                    <span style="font-weight: 600;">Klicke zum Upload</span> oder ziehe Datei hierher
+                    <br>
+                    <span class="subtext">Unterstützt PDF, PNG, JPEG</span>
+                </div>
+            </template>
+            
+            <template v-else>
+                <!-- Loading Content INSIDE the box as requested -->
+                <div class="spinner"></div>
+                <div class="text">
+                    Analysiere <strong>{{ store.resumeFile?.name }}</strong>...
+                    <br>
+                    <span class="subtext">Dies kann einen Moment dauern</span>
+                </div>
+            </template>
+            
+            <input 
+                type="file" 
+                ref="fileInput" 
+                class="hidden-input" 
+                accept=".pdf,.png,.jpg,.jpeg"
+                @change="handleFileUpload"
+                :disabled="store.isAnalyzing"
+            >
         </div>
-        <div v-else class="file-info">
-            <span class="icon">✅</span>
-            <p class="file-name">{{ fileName }}</p>
-            <p class="file-ready">Bereit zur Analyse</p>
+
+        <!-- Error State -->
+        <div v-if="store.error" class="error-state fade-in">
+             <span style="font-size: 20px;">⚠️</span>
+             <span>{{ store.error }}</span>
         </div>
-        <input 
-            type="file" 
-            ref="fileInput" 
-            @change="onFileChange" 
-            accept=".pdf,image/*" 
-            style="display: none"
-        />
     </div>
-    
-    <div class="actions">
-      <button 
-        @click="handleAnalyze" 
-        :disabled="!store.resumeFile || store.isAnalyzing"
-        class="primary-btn"
-      >
-        <span v-if="!store.isAnalyzing">🚀 Analyse starten</span>
-        <span v-else class="loader-container">
-          <span class="loader"></span>
-          <span>Analysiere...</span>
-        </span>
-      </button>
-      <button v-if="store.resumeFile" @click="clear" class="secondary">🗑️ Leeren</button>
-    </div>
-    
-    <p v-if="store.error" class="error">⚠️ {{ store.error }}</p>
-  </div>
 </template>
 
 <style scoped>
-.upload-container {
-  padding: 2.5rem;
-  margin-bottom: 2rem;
-  transition: transform 0.3s;
-  text-align: center;
+.upload-block {
+    margin-top: 2rem;
 }
 
-h3 {
-  margin-bottom: 0.5rem;
-  font-weight: 700;
-  font-size: 1.8rem;
-  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-  color: #94a3b8;
-  margin-bottom: 2rem;
-  font-size: 0.95rem;
-}
-
+/* Modern Notion Upload Style */
 .drop-zone {
-    border: 2px dashed rgba(96, 165, 250, 0.3);
-    border-radius: 16px;
-    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem;
+    border: 2px dashed var(--border-strong);
+    border-radius: 6px;
+    background: var(--bg-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.02);
-    position: relative;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+    min-height: 200px;
 }
 
-.drop-zone:hover {
-    border-color: #60a5fa;
-    background: rgba(96, 165, 250, 0.05);
-    transform: translateY(-2px);
+.drop-zone:hover:not(.disabled), .drop-zone.active {
+    background: rgba(35, 131, 226, 0.05);
+    border-color: #2383E2;
+    color: var(--text-primary);
 }
 
-.drop-zone.dragging {
-    border-color: #a78bfa;
-    background: rgba(167, 139, 250, 0.1);
-    border-style: solid;
+.drop-zone.disabled {
+    cursor: default;
+    opacity: 0.8;
+    background: #FAFAFA;
+    border-color: var(--border-subtle);
 }
 
+/* ... existing icon animation only when not disabled ... */
+.drop-zone:hover:not(.disabled) .icon {
+    transform: scale(1.1) translateY(-5px);
+}
 .icon {
-    font-size: 3.5rem;
+    font-size: 48px;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.text {
+    text-align: center;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.subtext {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
     display: block;
-    margin-bottom: 1rem;
-    animation: bounce 2s infinite;
 }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+.hidden-input {
+    display: none;
 }
 
-.prompt .main-text {
-    color: #e2e8f0;
-    margin: 0 0 0.5rem 0;
-    font-weight: 600;
-    font-size: 1.1rem;
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #333;
+    animation: spin 0.8s ease-in-out infinite;
+    margin-bottom: 4px;
 }
 
-.prompt .sub-text {
-    color: #94a3b8;
-    margin: 0;
-    font-size: 0.9rem;
-}
-
-.file-info .file-name {
-    color: #60a5fa;
-    font-weight: 600;
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
-}
-
-.file-info .file-ready {
-    color: #86efac;
-    margin: 0;
-    font-size: 0.9rem;
-}
-
-.actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.primary-btn {
-  min-width: 180px;
-}
-
-.secondary {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: none;
-}
-
-.secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.4);
-}
-
-.error {
-  color: #fca5a5;
-  margin-top: 1.5rem;
-  font-size: 0.95rem;
-  padding: 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.loader-container {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.loader {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 0.8s linear infinite;
+.error-state {
+    margin-top: 24px;
+    padding: 16px;
+    background: #ffe2dd;
+    color: #d44c47;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
-@media (max-width: 600px) {
-  .actions {
-    flex-direction: column;
-  }
-  
-  .primary-btn, .secondary {
-    width: 100%;
-  }
+.fade-in {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>

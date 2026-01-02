@@ -1,114 +1,68 @@
 <script setup>
-import Header from './components/Header.vue'
 import FileUpload from './components/FileUpload.vue'
 import AnalysisView from './components/AnalysisView.vue'
 import PuterInfoModal from './components/PuterInfoModal.vue'
 import DisclaimerModal from './components/DisclaimerModal.vue'
 import { useResumeStore } from './stores/resumeStore'
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 
 const store = useResumeStore()
 const showPuterModal = ref(false)
-const showDisclaimerModal = ref(false)
-const hasShownModal = ref(false)
-const hasAcceptedDisclaimer = ref(false)
+const showDisclaimer = ref(false)
 
-onMounted(() => {
-  // Check if user has seen the modals before
-  hasShownModal.value = localStorage.getItem('puterModalShown') === 'true'
-  hasAcceptedDisclaimer.value = localStorage.getItem('disclaimerAccepted') === 'true'
-  
-  // Show disclaimer on first visit
-  if (!hasAcceptedDisclaimer.value) {
-    showDisclaimerModal.value = true
-  }
-})
+// Init: Check if disclaimer was already accepted
+if (!localStorage.getItem('disclaimerAccepted')) {
+    showDisclaimer.value = true
+}
 
 const handleDisclaimerAccept = () => {
-  showDisclaimerModal.value = false
-  hasAcceptedDisclaimer.value = true
-  localStorage.setItem('disclaimerAccepted', 'true')
+    showDisclaimer.value = false
+    localStorage.setItem('disclaimerAccepted', 'true')
 }
 
 const handleStartAnalysis = () => {
-  // Show Puter modal only on first analysis attempt (after disclaimer)
-  if (!hasShownModal.value) {
+  const modalShown = localStorage.getItem('puterModalShown')
+  if (!modalShown) {
     showPuterModal.value = true
   } else {
-    proceedWithAnalysis()
+    store.analyzeResume()
   }
 }
 
-const proceedWithAnalysis = async () => {
+const handleModalClose = () => {
   showPuterModal.value = false
-  hasShownModal.value = true
-  localStorage.setItem('puterModalShown', 'true')
-  // Trigger the actual analysis
-  await store.analyzeResume()
-}
-
-const closeModal = () => {
-  showPuterModal.value = false
+  localStorage.setItem('puterModalShown', 'true') // Mark as shown
+  store.analyzeResume() // Proceed with analysis
 }
 </script>
 
 <template>
-  <div class="app-wrapper">
-    <Header />
+  <div class="notion-page">
+    <DisclaimerModal :show="showDisclaimer" @accept="handleDisclaimerAccept" />
     
+    <!-- Top Icon & Title (Notion Page Header) -->
+    <div style="margin-bottom: 3rem; margin-top: 2rem;">
+        <div style="font-size: 78px; line-height: 1; margin-bottom: 1rem;">📝</div>
+        <h1 style="margin-top: 0; margin-bottom: 0.5rem; color: var(--text-primary);">Lebenslauf Analyse</h1>
+        <p style="color: var(--text-secondary); font-size: 18px; margin: 0;">
+            Kritische HR-Analyse (Stärken, Schwächen, Optimierung)
+        </p>
+    </div>
+
+    <!-- Main Block -->
     <main>
-      <Transition name="fade" mode="out-in">
-        <FileUpload v-if="!store.analysisResult" @startAnalysis="handleStartAnalysis" />
-        <AnalysisView v-else />
-      </Transition>
+      <FileUpload v-if="!store.analysisResult" @startAnalysis="handleStartAnalysis" />
+      <AnalysisView v-else />
     </main>
-    
-    <footer class="app-footer">
-      <p>&copy; 2026 CV Intelligence. Powered by Puter AI.</p>
-    </footer>
-    
+
     <PuterInfoModal 
       :show="showPuterModal" 
-      @close="closeModal"
-      @proceed="proceedWithAnalysis"
-    />
-    
-    <DisclaimerModal 
-      :show="showDisclaimerModal"
-      @accept="handleDisclaimerAccept"
+      @proceed="handleModalClose"
+      @close="showPuterModal = false"
     />
   </div>
 </template>
 
 <style>
-.app-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 90vh;
-}
-
-main {
-  flex: 1;
-}
-
-.app-footer {
-  text-align: center;
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.5s ease;
-}
-
-.fade-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.fade-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
-}
+/* No scoped styles needed, using global Notion styles from style.css */
 </style>

@@ -36,33 +36,68 @@ export function useResumeAnalyzer() {
     }
 
     const parseResponse = (response) => {
-        let content = '';
-        if (typeof response === 'string') {
-            content = response;
-        } else if (response.message && typeof response.message === 'string') {
-            content = response.message;
-        } else if (response.text && typeof response.text === 'string') {
-            content = response.text;
-        } else {
-            content = response.toString();
+        // Debug Log
+        console.log("Raw AI Response:", response);
+
+        // 1. Detection of Usage Limits (Specific Paths & Text Search)
+        try {
+            // Path 1: Deep Puter Structure (as seen in logs)
+            const textDeep = response?.result?.message?.content?.[0]?.text;
+            // Path 2: Standard structure
+            const textStandard = response?.message?.content?.[0]?.text;
+            // Path 3: Stringify fallback
+            const stringified = typeof response === 'object' ? JSON.stringify(response) : String(response);
+
+            const checks = [textDeep, textStandard, stringified].filter(Boolean).join(' ').toLowerCase();
+
+            if (checks.includes('usage limit') ||
+                checks.includes('reached your ai') ||
+                checks.includes('quota exceeded')) {
+                throw new Error('Das tägliche KI-Limit ist vorübergehend erreicht. Bitte warten Sie einen Moment oder versuchen Sie es später erneut.');
+            }
+        } catch (e) {
+            // Rethrow specific limit error
+            if (e.message.includes('Limit')) throw e;
         }
 
-        // Clean up markdown code blocks if present
+        let content = '';
+
+        // 2. Extract Content Safely
+        if (typeof response === 'string') {
+            content = response;
+        } else if (response?.message?.content && typeof response.message.content === 'string') {
+            content = response.message.content;
+        } else if (response?.text && typeof response.text === 'string') {
+            content = response.text;
+        } else if (response?.message && typeof response.message === 'string') {
+            content = response.message;
+        } else {
+            // Last resort: Stringify
+            content = JSON.stringify(response);
+        }
+
+        // 3. Clean Markdown & Markers
         if (content.includes('```json')) {
             content = content.split('```json')[1].split('```')[0].trim();
         } else if (content.includes('```')) {
             const parts = content.split('```');
             content = parts.length > 1 ? parts[1].trim() : parts[0].trim();
-        } else {
-            // Find first { and last } to isolate JSON
-            const firstBrace = content.indexOf('{');
-            const lastBrace = content.lastIndexOf('}');
-            if (firstBrace !== -1 && lastBrace !== -1) {
-                content = content.substring(firstBrace, lastBrace + 1);
-            }
         }
 
-        return JSON.parse(content)
+        // 4. Force JSON Isolation (Start from first { to last })
+        const firstBrace = content.indexOf('{');
+        const lastBrace = content.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            content = content.substring(firstBrace, lastBrace + 1);
+        }
+
+        // 5. Safe Parse
+        try {
+            return JSON.parse(content);
+        } catch (e) {
+            console.error("JSON Parse Error on content:", content);
+            throw new Error('Die Antwort konnte nicht verarbeitet werden (JSON Fehler).');
+        }
     }
 
     return {

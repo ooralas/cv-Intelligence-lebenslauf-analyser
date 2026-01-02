@@ -9,203 +9,199 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'proceed'])
-
-const handleProceed = () => {
-  emit('proceed')
-}
 </script>
 
 <template>
   <Transition name="modal">
     <div v-if="show" class="modal-overlay" @click.self="emit('close')">
       <div class="modal-content">
-        <div class="modal-header">
-          <span class="info-icon">ℹ️</span>
-          <h3>Puter.js Authentifizierung erforderlich</h3>
+        <div class="hero-icon">
+          🤖
         </div>
         
-        <div class="modal-body">
-          <p>
-            Um deinen Lebenslauf zu analysieren, benötigt diese App Zugriff auf <strong>Puter.js</strong> – 
-            eine sichere Cloud-Plattform für KI-Dienste.
-          </p>
-          
-          <div class="info-box">
-            <h4>Was passiert als Nächstes?</h4>
-            <ul>
-              <li>📂 Ein neues Fenster wird geöffnet</li>
-              <li>🔐 Du wirst aufgefordert, dich bei Puter anzumelden oder zu registrieren</li>
-              <li>✅ Nach der Authentifizierung kannst du die Analyse starten</li>
-            </ul>
+        <h2>KI-Verbindung</h2>
+        <p class="subtitle">Verbinde dich mit Puter.js für die Analyse</p>
+        
+        <div class="info-list">
+          <div class="info-item">
+            <div class="step-number">1</div>
+            <div class="text">
+              <strong>Puter.js autorisieren</strong>
+              Verbindung zum KI-Service herstellen.
+            </div>
           </div>
           
-          <p class="privacy-note">
-            Weitere Informationen zum Datenschutz findest du in der 
-            <a href="https://puter.com/privacy" target="_blank" rel="noopener noreferrer">
-              Puter.js Datenschutzerklärung
-            </a>.
-          </p>
+          <div class="info-item">
+            <div class="step-number">2</div>
+            <div class="text">
+              <strong>Analyse starten</strong>
+              Dein Dokument wird sicher verarbeitet.
+            </div>
+          </div>
         </div>
-        
-        <div class="modal-actions">
-          <button @click="handleProceed" class="primary-btn">
-            Verstanden, fortfahren
+
+        <div class="actions">
+          <button @click="emit('proceed')" class="modern-btn primary">
+            Verbinden & Starten
           </button>
-          <button @click="emit('close')" class="secondary">
+          <button @click="emit('close')" class="modern-btn secondary">
             Abbrechen
           </button>
         </div>
+        
+        <p class="footer-note">
+           Powered by <a href="https://puter.com" target="_blank">Puter.js</a>
+        </p>
       </div>
     </div>
   </Transition>
 </template>
 
 <style scoped>
+/* Gleiches Design System wie DisclaimerModal für Konsistenz */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+  z-index: 9999;
 }
 
 .modal-content {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(51, 65, 85, 0.98) 100%);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 20px;
-  padding: 2rem;
-  max-width: 550px;
+  background: #FFFFFF;
   width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
+  max-width: 400px;
+  padding: 40px 32px;
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px -10px rgba(0,0,0,0.08), 
+    0 0 1px rgba(0,0,0,0.1);
   text-align: center;
-  margin-bottom: 1.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
-.info-icon {
-  font-size: 3rem;
-  display: block;
-  margin-bottom: 1rem;
+.hero-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.5px;
 }
 
-.modal-body {
-  margin-bottom: 2rem;
+.subtitle {
+  color: #666;
+  font-size: 15px;
+  margin: 0 0 32px 0;
 }
 
-.modal-body p {
-  color: #e2e8f0;
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
-}
-
-.info-box {
-  background: rgba(96, 165, 250, 0.1);
-  border: 1px solid rgba(96, 165, 250, 0.3);
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin: 1.5rem 0;
-}
-
-.info-box h4 {
-  margin: 0 0 1rem 0;
-  color: #60a5fa;
-  font-size: 1.1rem;
-}
-
-.info-box ul {
-  margin: 0;
-  padding-left: 1.2rem;
-  color: #cbd5e1;
-}
-
-.info-box li {
-  margin-bottom: 0.7rem;
-  line-height: 1.6;
-}
-
-.privacy-note {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  background: rgba(167, 139, 250, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  border-left: 3px solid #a78bfa;
-}
-
-.privacy-note a {
-  color: #60a5fa;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.privacy-note a:hover {
-  color: #a78bfa;
-  text-decoration: underline;
-}
-
-.modal-actions {
+.info-list {
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+  margin-bottom: 32px;
+}
+
+.info-item {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px;
+  background: #FAFAFA;
+  border-radius: 12px;
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  background: #000;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
+  font-size: 14px;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.modal-actions button {
-  flex: 1;
-  min-width: 140px;
+.info-item .text {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.4;
 }
 
+.info-item strong {
+  display: block;
+  color: #111;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modern-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s;
+  border: none;
+}
+
+.modern-btn:active {
+  transform: scale(0.98);
+}
+
+.modern-btn.primary {
+  background: #000000;
+  color: #FFFFFF;
+}
+
+.modern-btn.secondary {
+  background: #F0F0F0;
+  color: #333;
+}
+
+.modern-btn.secondary:hover {
+  background: #E5E5E5;
+}
+
+.footer-note {
+    font-size: 12px;
+    color: #999;
+    margin-top: 24px;
+}
+
+.footer-note a {
+    color: #999;
+}
+
+/* Transitions */
 .modal-enter-active,
 .modal-leave-active {
-  transition: opacity 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
-}
-
-.modal-enter-active .modal-content,
-.modal-leave-active .modal-content {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-enter-from .modal-content,
-.modal-leave-to .modal-content {
-  transform: scale(0.95) translateY(20px);
-}
-
-@media (max-width: 600px) {
-  .modal-content {
-    padding: 1.5rem;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-  }
-  
-  .modal-actions button {
-    width: 100%;
-  }
+  transform: scale(0.96) translateY(10px);
 }
 </style>
