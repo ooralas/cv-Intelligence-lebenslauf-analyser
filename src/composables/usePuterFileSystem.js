@@ -14,7 +14,16 @@ export function usePuterFileSystem() {
         }
     }
 
+    const deleteFile = async (path) => {
+        try {
+            await puter.fs.delete(path)
+        } catch (error) {
+            console.warn('File deletion failed (non-critical):', error)
+        }
+    }
+
     return {
-        uploadFile
+        uploadFile,
+        deleteFile
     }
 }

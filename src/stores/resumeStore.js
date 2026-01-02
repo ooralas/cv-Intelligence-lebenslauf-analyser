@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { usePdfExtractor } from '../composables/usePdfExtractor'
 import { useResumeAnalyzer } from '../composables/useResumeAnalyzer'
 import { usePuterFileSystem } from '../composables/usePuterFileSystem'
+import { normalizeResumeData, isValidAnalysis } from '../utils/dataHelpers'
 
 export const useResumeStore = defineStore('resume', {
     state: () => ({
@@ -13,6 +13,8 @@ export const useResumeStore = defineStore('resume', {
     actions: {
         setResumeFile(file) {
             this.resumeFile = file
+            this.error = null
+            this.analysisResult = null
         },
 
         async analyzeResume() {
@@ -22,35 +24,33 @@ export const useResumeStore = defineStore('resume', {
             this.error = null
             this.analysisResult = null
 
-            try {
-                const { extractTextFromPDF } = usePdfExtractor()
-                const { analyzeWithText, analyzeWithImage, parseResponse } = useResumeAnalyzer()
-                const { uploadFile } = usePuterFileSystem()
+            const analyzer = useResumeAnalyzer()
+            const puterFs = usePuterFileSystem()
 
-                const fileType = this.resumeFile.type
+            try {
+                // Unified Flow: Upload ANY file (PDF or Image) and let AI analyze it directly
+                // This allows the AI (GPT-4o) to see the full layout and structure of the PDF
+                const uploadedFile = await puterFs.uploadFile(this.resumeFile)
                 let response
 
-                // For PDFs: Extract text first, then send as text prompt
-                if (fileType === 'application/pdf') {
-                    const extractedText = await extractTextFromPDF(this.resumeFile)
-                    response = await analyzeWithText(extractedText)
-                }
-                // For images: Use vision model with file upload
-                else if (fileType.startsWith('image/')) {
-                    const uploadedFile = await uploadFile(this.resumeFile)
-                    response = await analyzeWithImage(uploadedFile.path)
-                } else {
-                    throw new Error('Unsupported file type. Please upload a PDF or image file.')
+                try {
+                    // Use new unified file analysis function
+                    response = await analyzer.analyzeWithFile(uploadedFile.path)
+                } finally {
+                    // Cleanup: Delete temporary file always, even if analysis fails
+                    await puterFs.deleteFile(uploadedFile.name)
                 }
 
-                const data = parseResponse(response)
+                const rawData = analyzer.parseResponse(response)
+                const normalizedData = normalizeResumeData(rawData)
 
-                // Validation: Check if the AI returned an error or an empty name
-                if (data.error || (!data.name && !data.experience?.length)) {
-                    throw new Error('AI could not extract resume data')
+                // Validation
+                if (!isValidAnalysis(normalizedData)) {
+                    console.error("Invalid AI Response Structure:", rawData);
+                    throw new Error('Die Analyste lieferte keine verwertbaren Ergebnisse.');
                 }
 
-                this.analysisResult = data
+                this.analysisResult = normalizedData
             } catch (err) {
                 console.error('Analysis failed:', err)
                 this.error = err.message || 'Fehler: Die KI konnte diesen Lebenslauf nicht lesen. Bitte lade eine besser lesbare Datei hoch.'
@@ -60,10 +60,10 @@ export const useResumeStore = defineStore('resume', {
         },
 
         reset() {
-            this.resumeFile = null
-            this.analysisResult = null
-            this.isAnalyzing = false
-            this.error = null
+            this.resumeFile = null;
+            this.analysisResult = null;
+            this.isAnalyzing = false;
+            this.error = null;
         }
     },
 })

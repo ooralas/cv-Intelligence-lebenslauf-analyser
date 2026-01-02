@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@heyputer/puter.js": "^2.2.2",
-    "pdfjs-dist": "^5.4.530",
     "pinia": "^3.0.4",
     "vue": "^3.5.24"
   },
