@@ -7,6 +7,7 @@ const emit = defineEmits(['startAnalysis'])
 
 const fileInput = ref(null)
 const fileName = ref('')
+const isDragging = ref(false)
 
 const onFileChange = (e) => {
   const file = e.target.files[0]
@@ -25,6 +26,25 @@ const handleFile = (file) => {
   
   fileName.value = file.name
   store.setResumeFile(file)
+}
+
+const onDrop = (e) => {
+  e.preventDefault()
+  isDragging.value = false
+  
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    handleFile(files[0])
+  }
+}
+
+const onDragOver = (e) => {
+  e.preventDefault()
+  isDragging.value = true
+}
+
+const onDragLeave = () => {
+  isDragging.value = false
 }
 
 const handleAnalyze = () => {
@@ -46,11 +66,15 @@ const clear = () => {
     
     <div 
       class="drop-zone" 
+      :class="{ 'dragging': isDragging }"
       @click="fileInput.click()"
+      @drop="onDrop"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
     >
         <div v-if="!fileName" class="prompt">
             <span class="icon">📄</span>
-            <p class="main-text">Klicke hier, um eine Datei auszuwählen</p>
+            <p class="main-text">Klicke hier oder ziehe eine Datei hierher</p>
             <p class="sub-text">PDF, JPG oder PNG (max. 10MB)</p>
         </div>
         <div v-else class="file-info">
@@ -123,6 +147,12 @@ h3 {
     border-color: #60a5fa;
     background: rgba(96, 165, 250, 0.05);
     transform: translateY(-2px);
+}
+
+.drop-zone.dragging {
+    border-color: #a78bfa;
+    background: rgba(167, 139, 250, 0.1);
+    border-style: solid;
 }
 
 .icon {
